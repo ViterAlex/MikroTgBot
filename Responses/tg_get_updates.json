@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "result": [
+    {
+      "update_id": 144453537,
+      "callback_query": {
+        "id": "657639201231133447",
+        "from": {
+          "id": 153118558,
+          "is_bot": false,
+          "first_name": "Oleksandr",
+          "last_name": "Viter",
+          "username": "ViterAlex",
+          "language_code": "uk"
+        },
+        "message": {
+          "message_id": 54,
+          "from": {
+            "id": 5583145927,
+            "is_bot": true,
+            "first_name": "MikrotikScripts",
+            "username": "mik_script_bot"
+          },
+          "chat": {
+            "id": 153118558,
+            "first_name": "Oleksandr",
+            "last_name": "Viter",
+            "username": "ViterAlex",
+            "type": "private"
+          },
+          "date": 1655914712,
+          "text": "What to do?",
+          "reply_markup": {
+            "inline_keyboard": [
+              [
+                {
+                  "text": "buttonText",
+                  "callback_data": "hi"
+                }
+              ]
+            ]
+          }
+        },
+        "chat_instance": "608379388455454045",
+        "data": "hi"
+      }
+    }
+  ]
+}
