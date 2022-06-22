@@ -15,9 +15,9 @@
 
 :local config {
 
-"botAPI"="5583145927:AAEhL3ky6wuBY2S0vvAjryFa3VkiQsokzko";
-"defaultChatID"="153118558";
-"trusted"="153118558";
+"botAPI"="botapi";
+"defaultChatID"="chatid";
+"trusted"="chatid";
 "storage"="";
 "timeout"=1;
 }
