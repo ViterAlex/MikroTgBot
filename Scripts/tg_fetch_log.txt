@@ -1,9 +1,0 @@
-  status: connecting
-
-  status: requesting
-
-      status: finished
-  downloaded: 0KiB
-       total: 0KiB
-    duration: 1s
-
