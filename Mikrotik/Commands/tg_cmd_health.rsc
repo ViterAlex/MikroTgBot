@@ -1,25 +1,14 @@
 ##########################################################################
-# tg_cmd_healt - get router's state
+# tg_cmd_health - get router's state
 #  Input: 
 #     $1 — script name (information only)
-#     params — hostname to Wake-On-LAN
+#     params — no params
 #  Output: 
-#    "err_msg" on error 
-#    "success" on success
+#    {"error"="error message"} on error 
+#    {"info"="message from message"} on success
 ##########################################################################
 :put "Command $1 is executing";
-:global fTGsend;
-:local ppp [:len [/ppp active find]]
 
-:if (any $params) do={ 
-  :put "params = $params";
- }
-:if (any $chatid) do={ 
-  :put "chatid = $params";
- }
-:if (any $from) do={ 
-  :put "from = $from";
- }
 :local id [/system identity get name];
 :local cpu [/system resource get cpu-load];
 :local totalRam ([/system resource get total-memory]/(1024*1024));
@@ -37,5 +26,4 @@ RAM: _$usedRam from $totalRam used_"
 :if (any t) do={ 
   :set $text ("%0A".$text.$v."%C2%B0C");
  }
-$fTGsend chat=$chatid text=$text mode="Markdown"
-:return true
+:return {"info"=$text}

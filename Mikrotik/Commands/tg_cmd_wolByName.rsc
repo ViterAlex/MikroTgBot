@@ -4,8 +4,8 @@
 #     $1 — script name (information only)
 #     params — hostname to Wake-On-LAN
 #  Output: 
-#    "err_msg" on error 
-#    "success" on success
+#    {"error"="error message"} on error 
+#    {"info"="Method message to send to chat"}"success" on success
 ##########################################################################
 :put "Command $1 is executing";
 :local hostname $params;
@@ -16,7 +16,7 @@
   :local ip ([/ip dns static print as-value where name=$hostname]->0->"address");
   :set $mac ([/ip arp print as-value where address=$ip]->0->"mac-address")
   :if ([:typeof $mac]="nothing") do={
-    :return "<$hostname> is not found neither in dhcp lease no in dns static";
+    :return {"error"="*<$hostname>* is not found neither in dhcp lease no in dns static"} ;
   }
 }
 #get interface from arp
@@ -27,4 +27,4 @@
  }
 
 /tool wol mac=$mac interface=$ifc;
-:return "success";
+:return {"info"="*<$hostname>* is waked up!"};

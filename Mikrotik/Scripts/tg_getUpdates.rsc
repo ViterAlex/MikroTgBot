@@ -134,15 +134,28 @@
 :if ([:len $cmdScript]=0) do={
   :local t ("No such command <".($msg->"command"->"verb").">");
   :put $t;
-  $fTGSend chat=$chatid \
-           text=$t;
+  $fTGSend  chat=$chatid \
+            text=$t;
 } else={
   :put "Try to invoke $cmdScript";
   :local script [:parse [/system script get $cmdScript source]];
-  [$script $cmdScript \
+  :local cmdResult [$script $cmdScript \
           params=($msg->"command"->"params") \
           chatid=($msg->"chatId") \
           from=($msg->"userName")];
+  :put ("cmdResult = ".[:tostr $cmdResult]);
+  :if (any ($cmdResult->"error")) do={ 
+    $fTGsend  text=($cmdResult->"error") \
+              chat=($msg->"chatId") \
+              mode="Markdown"
+  } else={
+    :if (any ($cmdResult->"info")) do={ 
+      $fTGsend  text=($cmdResult->"info") \
+                chat=($msg->"chatId") \
+                mode="Markdown" \
+                replyMarkup=($cmdResult->"replyMarkup")
+    }
+  }
 }
 
 #check if command should be commited after execution

@@ -2,10 +2,10 @@
 # tg_cmd_coocoo - Init message
 #  Input: 
 #     $1 — script name (information only)
-#     params — hostname to Wake-On-LAN
+#     params — no params for the moment
 #  Output: 
-#    "err_msg" on error 
-#    "success" on success
+#    {"error"="error message"} on error 
+#    {"info"="message from method";"replyMarkup"="inline buttons markup"} on success
 ##########################################################################
 :put "Command $1 is executing";
 :local replaceChar do={
@@ -18,7 +18,6 @@
   }
   :return $output
 }
-:global fTGsend;
 :local emoji { \
               "wol"="%E2%8F%B0"; \
               "shutdown"="%F0%9F%9B%8C" \
@@ -30,4 +29,4 @@
 :local inlineButtons [$replaceChar ("{\"inline_keyboard\":[[ ".[:tostr $buttons]."]]}") ";" "," ]
 $fTGsend chat=$chatid text="What to do?" mode="Markdown" replyMarkup=$inlineButtons;
 
-return "success"
+return {"info"="What to do?";"replyMarkup"=$inlineButtons};

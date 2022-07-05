@@ -2,10 +2,10 @@
 # tg_cmd_menu - Send menu
 #  Input: 
 #     $1 — script name (information only)
-#     params — menu to be shown (wol, shutdown)
+#     params — menu to be shown. One of: {wol, shutdown}
 #  Output: 
-#    "err_msg" on error 
-#    "success" on success
+#    {"error"="error message"} on error 
+#    {"info"="message from method";"replyMarkup"="inline buttons markup"} on success
 ##########################################################################
 :put "Command $1 is executing";
 :local emoji { \
@@ -21,7 +21,7 @@
   }
   :return $output
 }
-:global fTGsend;
+# :global fTGsend;
 :local buttons { \
                 "wol"={
                   "{\"text\":\"".($emoji->"pc")." Miner\",\"callback_data\":\"wolByName sic-chief-631\"}", \
@@ -35,4 +35,5 @@
 :put $buttons;
 :local inlineButtons [$replaceChar ("{\"inline_keyboard\":[[ ".[:tostr ($buttons->$params)]."]]}") ";" "," ]
 :put $inlineButtons;
-$fTGsend chat=$chatid text="Select PC" mode="Markdown" replyMarkup=$inlineButtons;
+return {"info"="Select PC";"replyMarkup"=$inlineButtons};
+# $fTGsend chat=$chatid text="Select PC" mode="Markdown" replyMarkup=$inlineButtons;
