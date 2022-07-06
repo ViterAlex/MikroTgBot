@@ -1,7 +1,0 @@
-{
-  "botapi": "5583145927:AAEhL3ky6wuBY2S0vvAjryFa3VkiQsokzko",
-  "trusted": "153118558",
-  "allowed": "shutdown,health,online",
-  "notCommit":" health,online",
-  "0":1
-}
