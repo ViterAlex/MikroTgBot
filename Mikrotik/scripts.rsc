@@ -23,13 +23,13 @@ add dont-require-permissions=no name=tg_config owner=admin policy=read \
     \n########################################################################\
     ##\r\
     \n:local config {\r\
-    \n  \"botAPI\"=\"botAPI\";\r\
+    \n  \"botAPI\"=\"5583145927:AAEhL3ky6wuBY2S0vvAjryFa3VkiQsokzko\";\r\
     \n  \"defaultChatID\"=\"chatid\";\r\
-    \n  \"trusted\"=\"trustedChatsOrSenders\";\r\
+    \n  \"trusted\"=\"153118558\";\r\
     \n  \"storage\"=\"\";\r\
-    \n  \"timeout\"=120;\r\
-    \n  \"ignore\"=\"commandsToIgnore\";\r\
-    \n  \"executeNotCommit\"=\"health,add,remove\";\r\
+    \n  \"timeout\"=60;\r\
+    \n  \"ignore\"=\"shutdown\";\r\
+    \n  \"executeNotCommit\"=\"health,add,remove,online\";\r\
     \n}\r\
     \n:put \"<tg_config>: Config----------------------------------------------\
     --\"\r\
@@ -39,7 +39,8 @@ add dont-require-permissions=no name=tg_config owner=admin policy=read \
 add dont-require-permissions=no name=tg_getUpdates owner=admin policy=read \
     source="##################################################################\
     #######\r\
-    \n# Bot commands:\r\
+    \n# getUpdates \97 get updates from Telegram bot and execute commands.\r\
+    \n# Available commands\r\
     \n#   coocoo - Invitation message to start\r\
     \n#   wol - WOL menu\r\
     \n#   shutdown - shutdown menu\r\
@@ -48,16 +49,22 @@ add dont-require-permissions=no name=tg_getUpdates owner=admin policy=read \
     \n#\r\
     \n########################################################################\
     #\r\
-    \n:global fFetch;\r\
-    \n:global fTGcallback;\r\
-    \n:global fTGcommand;\r\
-    \n:global fTGsend;\r\
-    \n:global fTGresultToMsg;\r\
-    \n\r\
     \n#flag to prevent duplicate run getUpdate\r\
     \n:global BEINGUPDATED;\r\
     \n:if (any BEINGUPDATED) do={ return; }\r\
     \n:set BEINGUPDATED true;\r\
+    \n\r\
+    \n#wrapper for /tool fetch\r\
+    \n:global fFetch;\r\
+    \n#parser for callback\r\
+    \n:global fTGcallback;\r\
+    \n#parser for command\r\
+    \n:global fTGcommand;\r\
+    \n#wrapper for sendMessage\r\
+    \n:global fTGsend;\r\
+    \n#converter Telegram result to msg object\r\
+    \n:global fTGresultToMsg;\r\
+    \n\r\
     \n#executed messages\r\
     \n:global EXECMSG;\r\
     \n\r\
@@ -71,10 +78,10 @@ add dont-require-permissions=no name=tg_getUpdates owner=admin policy=read \
     \n:local cfg [\$fconfig];\r\
     \n\r\
     \n#local variables for params\r\
-    \n:local trusted [:toarray (\$cfg->\"trusted\")];\r\
-    \n:local botAPI (\$cfg->\"botAPI\");\r\
-    \n:local storage (\$cfg->\"storage\");\r\
-    \n:local timeout (\$cfg->\"timeout\");\r\
+    \n:local trusted  [:toarray (\$cfg->\"trusted\")];\r\
+    \n:local botAPI   (\$cfg->\"botAPI\");\r\
+    \n:local storage  (\$cfg->\"storage\");\r\
+    \n:local timeout  (\$cfg->\"timeout\");\r\
     \n\r\
     \n\r\
     \n:local logfile (\$storage.\"tg_fetch_log.txt\");\r\
@@ -85,7 +92,7 @@ add dont-require-permissions=no name=tg_getUpdates owner=admin policy=read \
     \n:put \"Reading updates...\"\r\
     \n\r\
     \n:local result [\$fFetch url=\$url resfile=\$logfile];\r\
-    \n:if ([:type (\$result->\"error\")]!=\"nothing\") do={\r\
+    \n:if (any (\$result->\"error\")) do={\r\
     \n  :put \"Error getting updates\";\r\
     \n  :put \$result;\r\
     \n  :set BEINGUPDATED;\r\
@@ -131,14 +138,7 @@ add dont-require-permissions=no name=tg_getUpdates owner=admin policy=read \
     \n\r\
     \n#check if message is expired\r\
     \n:if ((\$msg->\"expired\")=true) do={\r\
-    \n  #remove from executed\r\
-    \n  :local tempMsg;\r\
-    \n  :foreach k,v in=[:toarray \$EXECMSG] do={ \r\
-    \n    :if (\$v!=(\$msg->\"messageId\")) do={ \r\
-    \n      :set \$tempMsg (\$tempMsg.\$v);\r\
-    \n      }\r\
-    \n  }\r\
-    \n  :set \$EXECMSG \$tempMsg;\r\
+    \n  :set \$EXECMSG;\r\
     \n  [\$commitUpdate url=\$url msg=\$msg]\r\
     \n  # \$fTGsend text=(\"*\".[/system identity get name].\"*%0A\\\r\
     \n  # Command _\".\$msg->\"command\"->\"verb\".\"_ expired and commited.\"\
@@ -181,18 +181,29 @@ add dont-require-permissions=no name=tg_getUpdates owner=admin policy=read \
     name];\r\
     \n} on-error={:put \"no script \$cmdScript\"}\r\
     \n:if ([:len \$cmdScript]=0) do={\r\
-    \n  :local t (\"No such command <\".(\$msg->\"command\"->\"verb\").\">\");\
-    \r\
-    \n  :put \$t;\r\
-    \n  \$fTGSend chat=\$chatid \\\r\
-    \n           text=\$t;\r\
+    \n  \$fTGSend  chat=\$chatid \\\r\
+    \n            text=(\"No such command *<\".(\$msg->\"command\"->\"verb\").\
+    \"*>\") \\\r\
+    \n            mode=\"Markdown\";\r\
     \n} else={\r\
     \n  :put \"Try to invoke \$cmdScript\";\r\
     \n  :local script [:parse [/system script get \$cmdScript source]];\r\
-    \n  [\$script \$cmdScript \\\r\
-    \n          params=(\$msg->\"command\"->\"params\") \\\r\
-    \n          chatid=(\$msg->\"chatId\") \\\r\
-    \n          from=(\$msg->\"userName\")];\r\
+    \n  :local cmdResult [\$script \$cmdScript \\\r\
+    \n                            params=(\$msg->\"command\"->\"params\") \\\r\
+    \n                            chatid=(\$msg->\"chatId\") \\\r\
+    \n                            from=(\$msg->\"userName\")];\r\
+    \n  :if (any (\$cmdResult->\"error\")) do={ \r\
+    \n    \$fTGsend  text=(\$cmdResult->\"error\") \\\r\
+    \n              chat=(\$msg->\"chatId\") \\\r\
+    \n              mode=\"Markdown\"\r\
+    \n  } else={\r\
+    \n    :if (any (\$cmdResult->\"info\")) do={ \r\
+    \n      \$fTGsend  text=(\$cmdResult->\"info\") \\\r\
+    \n                chat=(\$msg->\"chatId\") \\\r\
+    \n                mode=\"Markdown\" \\\r\
+    \n                replyMarkup=(\$cmdResult->\"replyMarkup\")\r\
+    \n    }\r\
+    \n  }\r\
     \n}\r\
     \n\r\
     \n#check if command should be commited after execution\r\
@@ -202,9 +213,8 @@ add dont-require-permissions=no name=tg_getUpdates owner=admin policy=read \
     \n  :put (\"Do not commit executed <\".(\$msg->\"command\"->\"verb\").\">.\
     \");\r\
     \n  #add executed messages to list in order to not repeat\r\
-    \n  :global EXECMSG;\r\
-    \n  :if (any \$EXECMSG) do={ \r\
-    \n    :set (\"\$EXECMSG,\".(\$msg->\"messageId\"));\r\
+    \n  :if (\$EXECMSG=(\$msg->\"messageId\")) do={ \r\
+    \n    return;\r\
     \n  } else={\r\
     \n    :set \$EXECMSG (\$msg->\"messageId\");\r\
     \n  }\r\
@@ -344,34 +354,25 @@ add dont-require-permissions=no name=tg_resultToMsg owner=admin policy=read \
 add dont-require-permissions=no name=tg_cmd_health owner=admin policy=read \
     source="##################################################################\
     ########\r\
-    \n# tg_cmd_healt - get router's state\r\
+    \n# tg_cmd_health - get router's state\r\
     \n#  Input: \r\
     \n#     \$1 \97 script name (information only)\r\
-    \n#     params \97 hostname to Wake-On-LAN\r\
+    \n#     params \97 no params\r\
     \n#  Output: \r\
-    \n#    \"err_msg\" on error \r\
-    \n#    \"success\" on success\r\
+    \n#     On error:\r\
+    \n#       {\"error\"=\"error message\"}\r\
+    \n#     On success:\r\
+    \n#       {\"info\"=\"message from message\"} on success\r\
     \n########################################################################\
     ##\r\
     \n:put \"Command \$1 is executing\";\r\
-    \n:global fTGsend;\r\
-    \n:local ppp [:len [/ppp active find]]\r\
     \n\r\
-    \n:if (any \$params) do={ \r\
-    \n  :put \"params = \$params\";\r\
-    \n }\r\
-    \n:if (any \$chatid) do={ \r\
-    \n  :put \"chatid = \$params\";\r\
-    \n }\r\
-    \n:if (any \$from) do={ \r\
-    \n  :put \"from = \$from\";\r\
-    \n }\r\
     \n:local id [/system identity get name];\r\
     \n:local cpu [/system resource get cpu-load];\r\
     \n:local totalRam ([/system resource get total-memory]/(1024*1024));\r\
     \n:local freeRam ([/system resource get free-memory]/(1024*1024));\r\
     \n:local usedRam ((\$totalRam-\$freeRam).\"M\");\r\
-    \n:local text \"Router Id:* \$id * %0A\\\r\
+    \n:local text \"Router:* \$id * %0A\\\r\
     \nUptime: _\$[/system resource get uptime]_%0A\\\r\
     \nCPU: _\$cpu%25_%0A\\\r\
     \nRAM: _\$usedRam from \$totalRam used_\"\r\
@@ -383,8 +384,7 @@ add dont-require-permissions=no name=tg_cmd_health owner=admin policy=read \
     \n:if (any t) do={ \r\
     \n  :set \$text (\"%0A\".\$text.\$v.\"%C2%B0C\");\r\
     \n }\r\
-    \n\$fTGsend chat=\$chatid text=\$text mode=\"Markdown\"\r\
-    \n:return true"
+    \n:return {\"info\"=\$text}"
 add dont-require-permissions=no name=tg_cmd_wol owner=admin policy=read \
     source="##################################################################\
     ########\r\
@@ -417,10 +417,13 @@ add dont-require-permissions=no name=tg_cmd_coocoo owner=admin policy=\
     \n# tg_cmd_coocoo - Init message\r\
     \n#  Input: \r\
     \n#     \$1 \97 script name (information only)\r\
-    \n#     params \97 hostname to Wake-On-LAN\r\
+    \n#     params \97 no params for the moment\r\
     \n#  Output: \r\
-    \n#    \"err_msg\" on error \r\
-    \n#    \"success\" on success\r\
+    \n#     On error:\r\
+    \n#       {\"error\"=\"error message\"}\r\
+    \n#     On success:\r\
+    \n#       {\"info\"=\"message from method\";\"replyMarkup\"=\"inline butto\
+    ns markup\"}\r\
     \n########################################################################\
     ##\r\
     \n:put \"Command \$1 is executing\";\r\
@@ -434,24 +437,30 @@ add dont-require-permissions=no name=tg_cmd_coocoo owner=admin policy=\
     \n  }\r\
     \n  :return \$output\r\
     \n}\r\
-    \n:global fTGsend;\r\
     \n:local emoji { \\\r\
-    \n              \"pc\"=\"%F0%9F%92%BB\"; \\\r\
     \n              \"wol\"=\"%E2%8F%B0\"; \\\r\
-    \n              \"shutdown\"=\"%F0%9F%9B%8C\" \\\r\
+    \n              \"shutdown\"=\"%F0%9F%9B%8C\"; \\\r\
+    \n              \"health\"=\"%F0%9F%A9%BA\"; \\\r\
+    \n              \"online\"=\"%F0%9F%91%80\" \\\r\
     \n              };\r\
+    \n                # (\"{\\\"text\\\":\\\"\".(\$emoji->\"health\").\" Healt\
+    h\\\",\\\"callback_data\\\":\\\"health\\\"}\") \\\r\
     \n:local buttons { \\\r\
     \n                (\"{\\\"text\\\":\\\"\".(\$emoji->\"wol\").\" Wake up\\\
     \",\\\"callback_data\\\":\\\"menu wol\\\"}\"), \\\r\
     \n                (\"{\\\"text\\\":\\\"\".(\$emoji->\"shutdown\").\" Shutd\
-    own\\\",\\\"callback_data\\\":\\\"menu shutdown\\\"}\") \\\r\
+    own\\\",\\\"callback_data\\\":\\\"menu shutdown\\\"}\"), \\\r\
+    \n                (\"{\\\"text\\\":\\\"\".(\$emoji->\"online\").\" Who's t\
+    here\?\\\",\\\"callback_data\\\":\\\"online\\\"}\"), \\\r\
+    \n                (\"{\\\"text\\\":\\\"\".(\$emoji->\"health\").\" \\\",\\\
+    \"callback_data\\\":\\\"health\\\"}\") \\\r\
     \n               };\r\
     \n:local inlineButtons [\$replaceChar (\"{\\\"inline_keyboard\\\":[[ \".[:\
     tostr \$buttons].\"]]}\") \";\" \",\" ]\r\
     \n\$fTGsend chat=\$chatid text=\"What to do\?\" mode=\"Markdown\" replyMar\
     kup=\$inlineButtons;\r\
     \n\r\
-    \nreturn \"success\""
+    \nreturn {\"info\"=\"What to do\?\";\"replyMarkup\"=\$inlineButtons};"
 add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     ftp,reboot,read,write,policy,test source="# ------------------------------\
     -- JParseFunctions ---------------------------------------------------\r\
@@ -888,8 +897,9 @@ add dont-require-permissions=no name=tg_cmd_wolByName owner=admin policy=\
     \n#     \$1 \97 script name (information only)\r\
     \n#     params \97 hostname to Wake-On-LAN\r\
     \n#  Output: \r\
-    \n#    \"err_msg\" on error \r\
-    \n#    \"success\" on success\r\
+    \n#    {\"error\"=\"error message\"} on error \r\
+    \n#    {\"info\"=\"Method message to send to chat\"}\"success\" on success\
+    \r\
     \n########################################################################\
     ##\r\
     \n:put \"Command \$1 is executing\";\r\
@@ -904,8 +914,8 @@ add dont-require-permissions=no name=tg_cmd_wolByName owner=admin policy=\
     \n  :set \$mac ([/ip arp print as-value where address=\$ip]->0->\"mac-addr\
     ess\")\r\
     \n  :if ([:typeof \$mac]=\"nothing\") do={\r\
-    \n    :return \"<\$hostname> is not found neither in dhcp lease no in dns \
-    static\";\r\
+    \n    :return {\"error\"=\"*<\$hostname>* is not found neither in dhcp lea\
+    se no in dns static\"} ;\r\
     \n  }\r\
     \n}\r\
     \n#get interface from arp\r\
@@ -916,7 +926,7 @@ add dont-require-permissions=no name=tg_cmd_wolByName owner=admin policy=\
     \n }\r\
     \n\r\
     \n/tool wol mac=\$mac interface=\$ifc;\r\
-    \n:return \"success\";"
+    \n:return {\"info\"=\"*<\$hostname>* is waked up!\"};"
 add dont-require-permissions=no name=tg_cmd_shutdown owner=admin policy=read \
     source="##################################################################\
     ########\r\
@@ -1225,10 +1235,13 @@ add dont-require-permissions=no name=tg_cmd_menu owner=admin policy=read \
     \n# tg_cmd_menu - Send menu\r\
     \n#  Input: \r\
     \n#     \$1 \97 script name (information only)\r\
-    \n#     params \97 menu to be shown (wol, shutdown)\r\
+    \n#     params \97 menu to be shown. One of: {wol, shutdown}\r\
     \n#  Output: \r\
-    \n#    \"err_msg\" on error \r\
-    \n#    \"success\" on success\r\
+    \n#     On error:      \r\
+    \n#       {\"error\"=\"error message\"}\r\
+    \n#     On success:\r\
+    \n#       {\"info\"=\"message from method\";\"replyMarkup\"=\"inline butto\
+    ns markup\"}\r\
     \n########################################################################\
     ##\r\
     \n:put \"Command \$1 is executing\";\r\
@@ -1245,7 +1258,7 @@ add dont-require-permissions=no name=tg_cmd_menu owner=admin policy=read \
     \n  }\r\
     \n  :return \$output\r\
     \n}\r\
-    \n:global fTGsend;\r\
+    \n# :global fTGsend;\r\
     \n:local buttons { \\\r\
     \n                \"wol\"={\r\
     \n                  \"{\\\"text\\\":\\\"\".(\$emoji->\"pc\").\" Miner\\\",\
@@ -1257,17 +1270,32 @@ add dont-require-permissions=no name=tg_cmd_menu owner=admin policy=read \
     \n                  \"{\\\"text\\\":\\\"\".(\$emoji->\"pc\").\" Miner\\\",\
     \\\"callback_data\\\":\\\"shutdown sic-chief-631\\\"}\", \\\r\
     \n                  \"{\\\"text\\\":\\\"\".(\$emoji->\"pc\").\" Nimble Bel\
-    l\\\",\\\"callback_data\\\":\\\"shutdown PC2\\\"}\" \\\r\
+    l\\\",\\\"callback_data\\\":\\\"shutdown VM-BOT-TEST\\\"}\" \\\r\
     \n                }\r\
     \n               };\r\
     \n:put \$buttons;\r\
     \n:local inlineButtons [\$replaceChar (\"{\\\"inline_keyboard\\\":[[ \".[:\
     tostr (\$buttons->\$params)].\"]]}\") \";\" \",\" ]\r\
     \n:put \$inlineButtons;\r\
-    \n\$fTGsend chat=\$chatid text=\"Select PC\" mode=\"Markdown\" replyMarkup\
-    =\$inlineButtons;\r\
+    \nreturn {\"info\"=\"Select PC\";\"replyMarkup\"=\$inlineButtons};\r\
     \n"
 add dont-require-permissions=yes name=Startup owner=admin policy=\
     ftp,reboot,read,write,policy,test source="/system script run JParseFunctio\
     ns\r\
     \n/system script run TelegramBotFunctions"
+add dont-require-permissions=no name=tg_cmd_online owner=admin policy=read \
+    source="##################################################################\
+    ########\r\
+    \n# tg_cmd_online - To see who's online\r\
+    \n#  Input: \r\
+    \n#     \$1 \97 script name (information only)\r\
+    \n#     params \97 no params for the moment\r\
+    \n#  Output: \r\
+    \n#     On error:\r\
+    \n#       {\"error\"=\"error message\"}\r\
+    \n#     On success:\r\
+    \n#       {\"info\"=\"message from method\"}\r\
+    \n########################################################################\
+    ##\r\
+    \n:put \"Command \$1 is executing\";\r\
+    \nreturn {\"info\"=(\"*\".[/system identity get name].\"* is here!\")};"
