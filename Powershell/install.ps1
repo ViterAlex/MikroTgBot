@@ -74,4 +74,8 @@ catch
 {
   Write-Host "FAIL!" -ForegroundColor Red
   Write-Host $ex
+  return
 }
+
+Write-Host "Enable logging to $dest\Logs..." -NoNewline -ForegroundColor Green
+sc.exe control $serviceName 234
