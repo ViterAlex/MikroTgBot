@@ -4,8 +4,10 @@
 #     $1 — script name (information only)
 #     params — menu to be shown. One of: {wol, shutdown}
 #  Output: 
-#    {"error"="error message"} on error 
-#    {"info"="message from method";"replyMarkup"="inline buttons markup"} on success
+#     On error:      
+#       {"error"="error message"}
+#     On success:
+#       {"info"="message from method";"replyMarkup"="inline buttons markup"}
 ##########################################################################
 :put "Command $1 is executing";
 :local emoji { \
@@ -29,11 +31,10 @@
                 };
                 "shutdown"={
                   "{\"text\":\"".($emoji->"pc")." Miner\",\"callback_data\":\"shutdown sic-chief-631\"}", \
-                  "{\"text\":\"".($emoji->"pc")." Nimble Bell\",\"callback_data\":\"shutdown PC2\"}" \
+                  "{\"text\":\"".($emoji->"pc")." Nimble Bell\",\"callback_data\":\"shutdown VM-BOT-TEST\"}" \
                 }
                };
 :put $buttons;
 :local inlineButtons [$replaceChar ("{\"inline_keyboard\":[[ ".[:tostr ($buttons->$params)]."]]}") ";" "," ]
 :put $inlineButtons;
 return {"info"="Select PC";"replyMarkup"=$inlineButtons};
-# $fTGsend chat=$chatid text="Select PC" mode="Markdown" replyMarkup=$inlineButtons;

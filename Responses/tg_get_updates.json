@@ -2,9 +2,9 @@
   "ok": true,
   "result": [
     {
-      "update_id": 144453537,
+      "update_id": 144453567,
       "callback_query": {
-        "id": "657639201231133447",
+        "id": "657639199569405926",
         "from": {
           "id": 153118558,
           "is_bot": false,
@@ -14,7 +14,7 @@
           "language_code": "uk"
         },
         "message": {
-          "message_id": 54,
+          "message_id": 81,
           "from": {
             "id": 5583145927,
             "is_bot": true,
@@ -28,21 +28,29 @@
             "username": "ViterAlex",
             "type": "private"
           },
-          "date": 1655914712,
-          "text": "What to do?",
+          "date": 1655919370,
+          "text": "What to wake up?",
           "reply_markup": {
             "inline_keyboard": [
               [
                 {
-                  "text": "buttonText",
-                  "callback_data": "hi"
+                  "text": "PC1",
+                  "callback_data": "PC1"
+                },
+                {
+                  "text": "PC2",
+                  "callback_data": "PC2"
+                },
+                {
+                  "text": "PC3",
+                  "callback_data": "PC3"
                 }
               ]
             ]
           }
         },
         "chat_instance": "608379388455454045",
-        "data": "hi"
+        "data": "PC2"
       }
     }
   ]

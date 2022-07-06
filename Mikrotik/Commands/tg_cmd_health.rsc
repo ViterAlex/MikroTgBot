@@ -4,8 +4,10 @@
 #     $1 — script name (information only)
 #     params — no params
 #  Output: 
-#    {"error"="error message"} on error 
-#    {"info"="message from message"} on success
+#     On error:
+#       {"error"="error message"}
+#     On success:
+#       {"info"="message from message"} on success
 ##########################################################################
 :put "Command $1 is executing";
 
@@ -14,7 +16,7 @@
 :local totalRam ([/system resource get total-memory]/(1024*1024));
 :local freeRam ([/system resource get free-memory]/(1024*1024));
 :local usedRam (($totalRam-$freeRam)."M");
-:local text "Router Id:* $id * %0A\
+:local text "Router:* $id * %0A\
 Uptime: _$[/system resource get uptime]_%0A\
 CPU: _$cpu%25_%0A\
 RAM: _$usedRam from $totalRam used_"

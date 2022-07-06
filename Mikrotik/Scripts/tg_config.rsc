@@ -26,7 +26,7 @@
   "storage"="";
   "timeout"=120;
   "ignore"="shutdown";
-  "executeNotCommit"="health";
+  "executeNotCommit"="health,online";
 }
 :put "<tg_config>: Config------------------------------------------------"
 :foreach k,v in=$config do={ :put "\t\"$k\" = \"$v\"" }

@@ -4,8 +4,10 @@
 #     $1 — script name (information only)
 #     params — no params for the moment
 #  Output: 
-#    {"error"="error message"} on error 
-#    {"info"="message from method";"replyMarkup"="inline buttons markup"} on success
+#     On error:
+#       {"error"="error message"}
+#     On success:
+#       {"info"="message from method";"replyMarkup"="inline buttons markup"}
 ##########################################################################
 :put "Command $1 is executing";
 :local replaceChar do={
@@ -20,11 +22,16 @@
 }
 :local emoji { \
               "wol"="%E2%8F%B0"; \
-              "shutdown"="%F0%9F%9B%8C" \
+              "shutdown"="%F0%9F%9B%8C"; \
+              "health"="%F0%9F%A9%BA"; \
+              "online"="%F0%9F%91%80" \
               };
+                # ("{\"text\":\"".($emoji->"health")." Health\",\"callback_data\":\"health\"}") \
 :local buttons { \
                 ("{\"text\":\"".($emoji->"wol")." Wake up\",\"callback_data\":\"menu wol\"}"), \
-                ("{\"text\":\"".($emoji->"shutdown")." Shutdown\",\"callback_data\":\"menu shutdown\"}") \
+                ("{\"text\":\"".($emoji->"shutdown")." Shutdown\",\"callback_data\":\"menu shutdown\"}"), \
+                ("{\"text\":\"".($emoji->"online")." Who's there?\",\"callback_data\":\"online\"}"), \
+                ("{\"text\":\"".($emoji->"health")." \",\"callback_data\":\"health\"}") \
                };
 :local inlineButtons [$replaceChar ("{\"inline_keyboard\":[[ ".[:tostr $buttons]."]]}") ";" "," ]
 $fTGsend chat=$chatid text="What to do?" mode="Markdown" replyMarkup=$inlineButtons;
