@@ -343,44 +343,95 @@
 }}
 
 # ------------------- Load JSON from arg --------------------------------
-global JSONLoads
+:global JSONLoads
 if (!any $JSONLoads) do={ global JSONLoads do={
-    global JSONIn $1
-    global fJParse
-    local ret [$fJParse]
+    :global JsonFromArray;
+    :global JSONIn $1
+    :global fJParse
+    :local ret [$fJParse]
     set JSONIn
-    global Jpos; set Jpos
-    global Jdebug; if (!$Jdebug) do={set Jdebug}
+    :global Jpos; set Jpos
+    :global Jdebug; if (!$Jdebug) do={set Jdebug}
     return $ret
 }}
 
 # ------------------- Load JSON from file --------------------------------
 global JSONLoad
-if (!any $JSONLoad) do={ global JSONLoad do={
+if (!any $JSONLoad) do={ :global JSONLoad do={
     if ([len [/file find name=$1]] > 0) do={
-        global JSONLoads
+        :global JSONLoads
         return [$JSONLoads [/file get $1 contents]]
     }
 }}
 
-# ------------------- Unload JSON parser library ----------------------
-global JSONUnload
-if (!any $JSONUnload) do={ global JSONUnload do={
-    global JSONIn; set JSONIn
-    global Jpos; set Jpos
-    global Jdebug; set Jdebug
-    global fByteToEscapeChar; set fByteToEscapeChar
-    global fJParse; set fJParse
-    global fJParseArray; set fJParseArray
-    global fJParseNumber; set fJParseNumber
-    global fJParseObject; set fJParseObject
-    global fJParsePrint; set fJParsePrint
-    global fJParsePrintVar; set fJParsePrintVar
-    global fJParseString; set fJParseString
-    global fJSkipWhitespace; set fJSkipWhitespace
-    global fUnicodeToUTF8; set fUnicodeToUTF8
-    global JSONLoads; set JSONLoads
-    global JSONLoad; set JSONLoad
-    global JSONUnload; set JSONUnload
+# ------------------- Convert array to JSON ------------------------------
+  :global JsonFromArray
+  :if (!any $JsonFromArray) do={:global JsonFromArray do={
+    :local i [:len $1];:local j 0;
+    :local q "\"";
+    :local a false;
+    :foreach n,v in=$1 do={
+      :set $j ($j+1);
+      :if ([:typeof $n]!="num") do={
+        :set $s ($s.$q.$n.$q.":");:set $a true;
+      }
+      :if ([:typeof $v]="num") do={
+        :if ($i=$j) do={
+            :set $s ($s.$v);
+        } else={
+            :set $s ($s.$v.",");
+          }
+      } else={
+        :if ([:typeof $v]!="array") do={
+          :if ($i=$j) do={
+            :set $s  ($s.$q.$v.$q)
+          } else={
+              :set $s ($s.$q.$v.$q.",");
+            }
+          } else={ 
+              :if ($i=$j) do={
+                :set $s ($s.[$Json $v])
+              } else={
+                  :set $s ($s.[$Json $v].",");
+                }
+            }
+        }
+    }
+    :if ($a) do={:return ("{".$s."}");}
+    :return ("[".$s."]");
+}}
+
+# ------------------- Save file with specified name ----------------------
+#First argument is desired file name
+#Second argument is file content
+:global SaveToJson
+:if (!any $SaveToJson) do={ :global SaveToJson do={
+  :local tmpFile "temp.txt";
+  /file print file=$tmpFile
+  :delay 1s;
+  /file set $tmpFile contents=$2
+  /file remove $tmpFile
+}}
+
+# ------------------- Unload JSON parser library -------------------------
+:global JSONUnload
+if (!any $JSONUnload) do={ :global JSONUnload do={
+    :global JSONIn; set JSONIn
+    :global Jpos; set Jpos
+    :global Jdebug; set Jdebug
+    :global fByteToEscapeChar; set fByteToEscapeChar
+    :global fJParse; set fJParse
+    :global fJParseArray; set fJParseArray
+    :global fJParseNumber; set fJParseNumber
+    :global fJParseObject; set fJParseObject
+    :global fJParsePrint; set fJParsePrint
+    :global fJParsePrintVar; set fJParsePrintVar
+    :global fJParseString; set fJParseString
+    :global fJSkipWhitespace; set fJSkipWhitespace
+    :global fUnicodeToUTF8; set fUnicodeToUTF8
+    :global JSONLoads; set JSONLoads
+    :global JSONLoad; set JSONLoad
+    :global JSONUnload; set JSONUnload
+    :global JsonFromArray; set JsonFromArray
 }}
 # ------------------- End JParseFunctions----------------------

@@ -1,4 +1,4 @@
-
+$ErrorActionPreference = "Stop"
 . $PSScriptRoot\sendMessage.ps1
 . $PSScriptRoot\resultToMsg.ps1
 . $PSScriptRoot\..\commands.ps1
@@ -15,7 +15,25 @@ function commitUpdate
   return Invoke-RestMethod -Uri $url 
 }
 
-$msg = Invoke-RestMethod -Uri $url 
+if (Test-Path -Path ".\firstrun" -PathType Leaf) {
+  #File 'firstrun' exists
+  foreach ($chat in $config.trusted.split(",")) {
+    try {
+      send -text "*$($env:COMPUTERNAME):* I'm online!" -chat $chat -mode "Markdown"
+    }
+    catch {
+      {1:<#Do this if a terminating exception happens#>}
+    }
+  }
+  Remove-Item ".\firstrun"
+}
+try {
+  $msg = Invoke-RestMethod -Uri $url 
+}
+catch {
+  Write-host $_.Exception -ForegroundColor Red
+  return
+}
 if ($msg.result.Length -eq 0)
 {
   Write-Host "No new updates" -ForegroundColor Green

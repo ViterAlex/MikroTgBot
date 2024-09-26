@@ -1,24 +1,22 @@
 ##########################################################################
-# tg_cmd_wol - inlinebuttons to WOL PC
+# tg_cmd_wol - Wake-on-LAN
 # 
 #  Input: 
 #     $1 — script name (information only)
-#     params
-#     chat
-#     from
+#     params — mac-address for WoL command
+#     chat — not used
+#     from — not used
 #  Output: 
 #    -1 on error 
 #    "success" on success
 ##########################################################################
-:put "Command $1 is executing";
-#get references to functions from scripts
-:local http [:parse [/system script get func_fetch source]];
-:local fconfig [:parse [/system script get tg_config source]];
-:local send [:parse [/system script get tg_sendMessage source]];
-
-:global BUTTONS;
-:if ([:typeof $BUTTONS]="nothing") do={ 
-  $send text="No PCs added. Use menu to add one.";
-        chat=$chat
-  :return -1;
- }
+:put "Command $1 is executing with mac-address=$params";
+#load config
+:local cfgFile [:parse [/system script get tg_config source]];
+:local cfg [$cfgFile];
+#get interfaces from config
+:local interfaces [:toarray ($cfg->"wolInterfaces")]
+#call WoL on all interfaces
+:foreach i in=$interfaces do={
+  /tool wol mac=$params interface=$i
+}

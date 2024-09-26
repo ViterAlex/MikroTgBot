@@ -83,14 +83,18 @@
   :set ($msg->"text")       ($result->"callback_query"->"message"->"text");
   :set ($msg->"command")    [$fTGcallback query=($result->"callback_query"->"data")];
  } else={
-  :set $tgDate ($result->"message"->"date");
-  :set ($msg->"messageId")  ($result->"message"->"message_id");
-  :set ($msg->"fromId")     ($result->"message"->"from"->"id");
-  :set ($msg->"chatId")     ($result->"message"->"chat"->"id");
-  :set ($msg->"userName")   ($result->"message"->"from"->"username");
-  :set ($msg->"firstName")  ($result->"message"->"from"->"first_name");
-  :set ($msg->"lastName")   ($result->"message"->"from"->"last_name");
-  :set ($msg->"text")       ($result->"message"->"text");
+  :local messageBody "message";
+  :if (any ($result->"edited_message")) do={ 
+    :set $messageBody "edited_message"
+  }
+  :set $tgDate ($result->$messageBody->"date");
+  :set ($msg->"messageId")  ($result->$messageBody->"message_id");
+  :set ($msg->"fromId")     ($result->$messageBody->"from"->"id");
+  :set ($msg->"chatId")     ($result->$messageBody->"chat"->"id");
+  :set ($msg->"userName")   ($result->$messageBody->"from"->"username");
+  :set ($msg->"firstName")  ($result->$messageBody->"from"->"first_name");
+  :set ($msg->"lastName")   ($result->$messageBody->"from"->"last_name");
+  :set ($msg->"text")       ($result->$messageBody->"text");
   :set ($msg->"command")    [$fTGcommand text=($msg->"text")];
  }
 :set ($msg->"expired")    (($curDate-$tgDate)>$timeout);

@@ -7,17 +7,20 @@
 #    {"error"="error message"} on error 
 #    {"verb"="verb"; "script"="scriptName"; "params"="params"}
 ##########################################################################
-:local command {"verb"=""; "script"=""; "params"=""};
+#temporary variables
+:local v;
+:local p;
+:local s;
 #find position of first whitespace
 :local pos [:find $query " "];
 :if ([:type $pos]="nil") do={
   #no spaces.
-  :set ($command->"verb") $query;
-  :set ($command->"script") ("tg_cmd_".($command->"verb"));
-  :return $command;
+  :set $v $query;
+  :set $s ("tg_cmd_".$v);
+  :return {"verb"=$v; "script"=$s; "params"=$p};
 }
 #There are spaces
-:set ($command->"verb") [:pick $query 0 $pos];
-:set ($command->"script") ("tg_cmd_".($command->"verb"));
-:set ($command->"params") [:pick $query ($pos+1) [:len $query]];
-:return $command;
+:set $v [:pick $query 0 $pos];
+:set $s ("tg_cmd_".$v);
+:set $p [:pick $query ($pos+1) [:len $query]];
+:return {"verb"=$v; "script"=$s; "params"=$p};

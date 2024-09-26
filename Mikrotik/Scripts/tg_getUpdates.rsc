@@ -1,24 +1,14 @@
 #########################################################################
 # getUpdates — get updates from Telegram bot and execute commands.
 # Available commands
-#   coocoo - Invitation message to start
-#   wol - WOL menu
-#   shutdown - shutdown menu
-#   add - Add new computer to manage
-#   remove - Remove computer
+#   start - Start with bot
 #
 #########################################################################
-#flag to prevent duplicate run getUpdate
-:global BEINGUPDATED;
-:if (any BEINGUPDATED) do={ return; }
-:set BEINGUPDATED true;
 
 #wrapper for /tool fetch
 :global fFetch;
 #parser for callback
 :global fTGcallback;
-#parser for command
-:global fTGcommand;
 #wrapper for sendMessage
 :global fTGsend;
 #converter Telegram result to msg object
@@ -31,8 +21,14 @@
  :global fFetch;
  $fFetch url=($url."&offset=".(($msg->"updateId")+1))
 }
+#local function to exit getUpdates routine.
+:local finish do={
+  #enable scheduler
+  :put "Finish function called"
+  # /system scheduler set disabled=no [find name=Get_TG_Updates]
+}
 
-#get config script and execute it
+#get config script and execute it to setup
 :local fconfig [:parse [/system script get tg_config source]];
 :local cfg [$fconfig];
 
@@ -51,32 +47,39 @@
 
 :local result [$fFetch url=$url resfile=$logfile];
 :if (any ($result->"error")) do={
-  :put "Error getting updates";
-  :put $result;
-  :set BEINGUPDATED;
-  return "Failed get updates";
+  :local msg ("Error getting updates\n".$result)
+  $finish
+  :put "Failed get updates";
+  return $msg;
 }
 :put "Finished to read updates.\n";
-
+:put $result;
 :global JSONLoads;
 #parse result
 :set $result ([$JSONLoads ($result->"data")]->"result");
+:if ([:len $result]=0) do={ 
+  #no updates
+  :local msg "No updates"
+  $finish;
+  return $msg;
+ }
 :local timeout ($cfg->"timeout");
 #convert to msg
 :put "Converting result to msg...";
 :local msg [$fTGresultToMsg result=$result timeout=$timeout];
-
+:put "------------------------MSG------------------------"
+:put $msg;
 #check for errors
 :if (any ($msg->"error")) do={ 
   :put $msg;
-  :set BEINGUPDATED;
+  $finish;
   return $msg;
 }
 
 #check if any messages
 :if (!any ($msg->"messageId")) do={ 
   :put "No new updates";
-  :set BEINGUPDATED;
+  $finish;
   :return {"info"="no updates"};
 }
 
@@ -88,19 +91,30 @@
   [$commitUpdate url=$url msg=$msg]
   $fTGsend  chat=($msg->"chatId") \
             text="You're not allowed to send commands";
-  :set BEINGUPDATED;
+  $finish
   :return {"error"="You're not allowed to send commands"};
 }
 
 #check if message is expired
 :if (($msg->"expired")=true) do={
-  :set $EXECMSG;
+  #message if command is just expired
+  :local messageText "Command is expired. Repeat, please."
+  :if (any $EXECMSG) do={ 
+    #message if command was executed and expired
+    :set $EXECMSG;
+    :set messageText "Let's continue."
+  }
   [$commitUpdate url=$url msg=$msg]
-  # $fTGsend text=("*".[/system identity get name]."*%0A\
-  # Command _".$msg->"command"->"verb"."_ expired and commited.") \
-  #           chat=($msg->"chatId") \
-  #           mode="Markdown"
-  :set BEINGUPDATED;
+  #send main menu to chat
+  $fTGsend  chat=($msg->"chatId") \
+            text=$messageText;
+  :local script [:parse [/system script get tg_cmd_menu source]];
+  :local r [$script "tg_cmd_menu" params="main"];
+  $fTGsend  text=($r->"info") \
+                chat=($msg->"chatId") \
+                mode="Markdown" \
+                replyMarkup=($r->"replyMarkup")
+  $finish;
   return {
     "info"="Message is expired and commited";
     "msg"=$msg
@@ -110,6 +124,7 @@
 #check if message was executed
 :local isexecuted [:find $EXECMSG ($msg->"messageId")];
 :if (any isexecuted) do={ 
+  $finish;
   return {"info"=("command <".($msg->"command"->"verb")."> already executed.")}
 }
 
@@ -117,7 +132,7 @@
 :local cmdToIgnore [:find ($cfg->"ignore") ($msg->"command"->"verb")];
 :if (any $cmdToIgnore) do={ 
   :put ("Do not commit on <".($msg->"command"->"verb").">. Skip it.");
-  :set BEINGUPDATED;
+  $finish;
   return {
     "info"="Ignore command";
     "msg"=$msg
@@ -130,11 +145,15 @@
 #try to get script by its name
 :do {
   :set $cmdScript [/system script get ($msg->"command"->"script") name];
-} on-error={:put "no script $cmdScript"}
+} on-error={
+  :put "no script $cmdScript";
+  :log error "bot: $cmdScript isn't found";
+}
 :if ([:len $cmdScript]=0) do={
   $fTGSend  chat=$chatid \
             text=("No such command *<".($msg->"command"->"verb")."*>") \
             mode="Markdown";
+  :log error ("bot: Command ".($msg->"command"->"verb")." isn't found");
 } else={
   :put "Try to invoke $cmdScript";
   :local script [:parse [/system script get $cmdScript source]];
@@ -152,6 +171,7 @@
                 chat=($msg->"chatId") \
                 mode="Markdown" \
                 replyMarkup=($cmdResult->"replyMarkup")
+      :log info ("bot: Command ".($msg->"command"->"verb").". Result: ".($cmdResult->"info"));
     }
   }
 }
@@ -162,11 +182,12 @@
   :put ("Do not commit executed <".($msg->"command"->"verb").">.");
   #add executed messages to list in order to not repeat
   :if ($EXECMSG=($msg->"messageId")) do={ 
+    $finish;
     return;
   } else={
     :set $EXECMSG ($msg->"messageId");
   }
-  :set BEINGUPDATED;
+  $finish;
   return {
     "info"="Execute but not commit";
     "msg"=$msg
@@ -175,4 +196,4 @@
 
 :put ("\n\nCommiting message on <".($msg->"command"->"verb").">...");
 $commitUpdate url=$url msg=$msg;
-:set BEINGUPDATED;
+$finish;
